@@ -69,10 +69,10 @@ def load_bignum(lcd):
     )
 
 if __name__ == "__main__":
-    from lcd_helper import lcd_setup
+    from .lcd_helper import lcd_setup
     lcd = lcd_setup(1.0, 0.4)
 
-    #from wifi_selection import run_select_wifi
+    #from .wifi_selection import run_select_wifi
     #run_select_wifi(lcd)
 
     run_clock(lcd)

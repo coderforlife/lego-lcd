@@ -3,8 +3,6 @@
 Helpers for useing the LCD library. In general these are all specific to my setup and devices.
 """
 
-import pyximport
-pyximport.install() # setup_args?
 import RPi.GPIO, wiringpi
 # requires: <lcd>
 
@@ -129,7 +127,7 @@ LCD_TRANS.update(ASCII_TRANS)
 
 def lcd_setup(ct=None, bl=None):
     """Setup the LCD and other GPIO items. Returns the LCD object."""
-    from lcd import LCD
+    from .lcd import LCD
     wiringpi.wiringPiSetupGpio()
     RPi.GPIO.setmode(RPi.GPIO.BCM)
     wiringpi.pinMode(CT_PIN, wiringpi.PWM_OUTPUT)
