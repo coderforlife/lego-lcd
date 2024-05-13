@@ -7,9 +7,11 @@ name = "lego-lcd"
 version = "0.1"
 readme = "README.md"
 requires-python = ">= 3.8"
-lcd-clock = "clock:main"
 dependencies = [
     "Cython",
     "wiringpi",
     "RPi.GPIO",
 ]
+
+[project.scripts]
+lcd-clock = "clock:main"
