@@ -68,7 +68,8 @@ def load_bignum(lcd):
         b'\x02\x00\x05\x07\x00\x07\x06\x00\x02\x00',
     )
 
-if __name__ == "__main__":
+
+def main():
     from .lcd_helper import lcd_setup
     lcd = lcd_setup(1.0, 0.4)
 
@@ -76,6 +77,10 @@ if __name__ == "__main__":
     #run_select_wifi(lcd)
 
     run_clock(lcd)
+
+
+if __name__ == "__main__":
+    main()
 
 
 # Button on pin 24
