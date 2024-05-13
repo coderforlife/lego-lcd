@@ -146,8 +146,8 @@ def set_backlight(bl):
 
 def beep(freq=1000, dur=0.1):
     """Emit a beep"""
-    import lcd
-    lcd.beep(BEEP_PIN, freq, dur)
+    from .lcd import beep
+    beep(BEEP_PIN, freq, dur)
 
 def as_bytes(s, trans=None):
     """
