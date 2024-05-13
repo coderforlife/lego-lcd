@@ -1,22 +1,28 @@
 #cython: language_level=3
-# requires: Cython, wiringpi
 
 from cpython.bytes cimport PyBytes_FromStringAndSize
+cimport wiringpi as wp
 
-cdef extern from "wiringPi.h":
-    cdef enum:
-        INPUT = 0
-        OUTPUT = 1
-        PWM_OUTPUT = 2
-    void pinMode(int pin, int mode) nogil
-    void digitalWrite(int pin, int value) nogil
-    void pwmWrite(int pin, int value) nogil
-    int digitalRead(int pin) nogil
-    
-    unsigned int millis() nogil
-    unsigned int micros() nogil
-    void delay(unsigned int howLong) nogil
-    void delayMicroseconds(unsigned int howLong) nogil
+
+# Wiring-PI Wrapper Functions
+# The official Wiring-PI python library is abandoned and mixing it with a separate wiring pi library
+# causes issues.
+INPUT = wp.INPUT
+OUTPUT = wp.OUTPUT
+PWM_OUTPUT = wp.PWM_OUTPUT
+def wiringPiSetup(): return wp.wiringPiSetup()
+def wiringPiSetupGpio(): return wp.wiringPiSetupGpio()
+def wiringPiSetupPhys(): return wp.wiringPiSetupPhys()
+def wiringPiSetupSys(): return wp.wiringPiSetupSys()
+def pinMode(int pin, int mode): wp.pinMode(pin, mode)
+def digitalWrite(int pin, int value): wp.digitalWrite(pin, value)
+def pwmWrite(int pin, int value): wp.pwmWrite(pin, value)
+def digitalRead(int pin): return wp.digitalWrite(pin)
+def millis(): return wp.millis()
+def micros(): return wp.micros()
+def delay(unsigned int howLong): wp.delay(howLong)
+def delayMicroseconds(unsigned int howLong): wp.delayMicroseconds(howLong)
+
 
 # Simple utility that should be in C code to be accurate and uses the above Wiring-PI definitions
 def beep(int pin, double freq=1000, double dur=0.1):
@@ -27,13 +33,13 @@ def beep(int pin, double freq=1000, double dur=0.1):
     """
     cdef unsigned int delay, niter, i
     with nogil:
-        pinMode(pin, OUTPUT)    
+        wp.pinMode(pin, OUTPUT)    
         delay = <unsigned int>(1000000 // (2 * freq)) # Hz -> microseconds (halfed)
         niter = <unsigned int>(2*dur*freq + 0.5)
         for i in xrange(niter):
-            digitalWrite(pin, i & 1)
-            delayMicroseconds(delay)
-        digitalWrite(pin, 0)
+            wp.digitalWrite(pin, i & 1)
+            wp.delayMicroseconds(delay)
+        wp.digitalWrite(pin, 0)
     
 cdef int[4] LCD_row_offs = [ 0x00, 0x40, 0x14, 0x54 ]
 
@@ -66,25 +72,25 @@ cdef class LCD:
         
         # We don't need the GIL from here to the end and there is a lot of waiting
         # Function Set Command - 001(DL)NF00
-        cdef int por = 40 - millis()
+        cdef int por = 40 - wp.millis()
         with nogil:
             
             # All pins start as outputs and low
-            digitalWrite(EN, 0); pinMode(EN, OUTPUT)
-            digitalWrite(RS, 0); pinMode(RS, OUTPUT)
-            pinMode(RW, OUTPUT)
+            wp.digitalWrite(EN, 0); wp.pinMode(EN, wp.OUTPUT)
+            wp.digitalWrite(RS, 0); wp.pinMode(RS, wp.OUTPUT)
+            wp.pinMode(RW, wp.OUTPUT)
 
             if bits == 4:
                 self._read = self.read4; self._read_data = self.readData4
                 self._write = self.write4; self._write_data = self.writeData4
 
-                # Need to wait 40 ms since the LCD recieved power
+                # Need to wait 40 ms since the LCD received power
                 self.writing4()
                 self.set4(0)
-                if por > 0: delay(por)
-                self.set4(0x3); self.clock(); delayMicroseconds(4100)
-                self.set4(0x3); self.clock(); delayMicroseconds(100)
-                self.set4(0x3); self.clock(); delayMicroseconds(100)
+                if por > 0: wp.delay(por)
+                self.set4(0x3); self.clock(); wp.delayMicroseconds(4100)
+                self.set4(0x3); self.clock(); wp.delayMicroseconds(100)
+                self.set4(0x3); self.clock(); wp.delayMicroseconds(100)
                 self.set4(0x2); self.clock()
 
                 # Set default state to reading and send "Function Set Command"
@@ -105,9 +111,9 @@ cdef class LCD:
                 # Need to wait 40 ms since the LCD recieved power
                 self.writing8()
                 self.set8(0)
-                if por > 0: delay(por)
-                self.set8(0x30); self.clock(); delayMicroseconds(4100)
-                self.set8(0x30); self.clock(); delayMicroseconds(100)
+                if por > 0: wp.delay(por)
+                self.set8(0x30); self.clock(); wp.delayMicroseconds(4100)
+                self.set8(0x30); self.clock(); wp.delayMicroseconds(100)
                 self.set8(0x30); self.clock()
 
                 # Set default state to reading and send "Function Set Command"
@@ -134,68 +140,68 @@ cdef class LCD:
 
     cdef inline void clock(self) noexcept nogil:
         """Clocks a command in (EN pin high then low)"""
-        digitalWrite(self.EN, 1); delayMicroseconds(1); digitalWrite(self.EN, 0)
+        wp.digitalWrite(self.EN, 1); wp.delayMicroseconds(1); wp.digitalWrite(self.EN, 0)
     cdef inline void set8(self, unsigned char x) noexcept nogil:
         """Sets 8 bits to the DB pins"""
-        digitalWrite(self.DB[7], x&0x80)
-        digitalWrite(self.DB[6], x&0x40)
-        digitalWrite(self.DB[5], x&0x20)
-        digitalWrite(self.DB[4], x&0x10)
-        digitalWrite(self.DB[3], x&0x08)
-        digitalWrite(self.DB[2], x&0x04)
-        digitalWrite(self.DB[1], x&0x02)
-        digitalWrite(self.DB[0], x&0x01)
+        wp.digitalWrite(self.DB[7], x&0x80)
+        wp.digitalWrite(self.DB[6], x&0x40)
+        wp.digitalWrite(self.DB[5], x&0x20)
+        wp.digitalWrite(self.DB[4], x&0x10)
+        wp.digitalWrite(self.DB[3], x&0x08)
+        wp.digitalWrite(self.DB[2], x&0x04)
+        wp.digitalWrite(self.DB[1], x&0x02)
+        wp.digitalWrite(self.DB[0], x&0x01)
     cdef inline void set4(self, unsigned char x) noexcept nogil:
         """Sets 4 bits to the DB pins"""
-        digitalWrite(self.DB[3], x&0x08)
-        digitalWrite(self.DB[2], x&0x04)
-        digitalWrite(self.DB[1], x&0x02)
-        digitalWrite(self.DB[0], x&0x01)
+        wp.digitalWrite(self.DB[3], x&0x08)
+        wp.digitalWrite(self.DB[2], x&0x04)
+        wp.digitalWrite(self.DB[1], x&0x02)
+        wp.digitalWrite(self.DB[0], x&0x01)
 
         
     cdef inline void writing8(self) noexcept nogil:
         """Set the interface into writing mode (RW=0 and all DBs as outputs) (8-bit interface)"""
-        digitalWrite(self.RW, 0)
-        pinMode(self.DB[0], OUTPUT); pinMode(self.DB[1], OUTPUT)
-        pinMode(self.DB[2], OUTPUT); pinMode(self.DB[3], OUTPUT)
-        pinMode(self.DB[4], OUTPUT); pinMode(self.DB[5], OUTPUT)
-        pinMode(self.DB[6], OUTPUT); pinMode(self.DB[7], OUTPUT)
+        wp.digitalWrite(self.RW, 0)
+        wp.pinMode(self.DB[0], wp.OUTPUT); wp.pinMode(self.DB[1], wp.OUTPUT)
+        wp.pinMode(self.DB[2], wp.OUTPUT); wp.pinMode(self.DB[3], wp.OUTPUT)
+        wp.pinMode(self.DB[4], wp.OUTPUT); wp.pinMode(self.DB[5], wp.OUTPUT)
+        wp.pinMode(self.DB[6], wp.OUTPUT); wp.pinMode(self.DB[7], wp.OUTPUT)
     cdef inline void writing4(self) noexcept nogil:
         """Set the interface into writing mode (RW=0 and all DBs as outputs) (4-bit interface)"""
-        digitalWrite(self.RW, 0)
-        pinMode(self.DB[0], OUTPUT); pinMode(self.DB[1], OUTPUT)
-        pinMode(self.DB[2], OUTPUT); pinMode(self.DB[3], OUTPUT)
+        wp.digitalWrite(self.RW, 0)
+        wp.pinMode(self.DB[0], wp.OUTPUT); wp.pinMode(self.DB[1], wp.OUTPUT)
+        wp.pinMode(self.DB[2], wp.OUTPUT); wp.pinMode(self.DB[3], wp.OUTPUT)
 
     cdef inline void reading8(self) noexcept nogil:
         """Set the interface into reading mode (RW=1 and all DBs as inputs) (8-bit interface)"""
-        digitalWrite(self.RW, 1)
-        pinMode(self.DB[0], INPUT); pinMode(self.DB[1], INPUT)
-        pinMode(self.DB[2], INPUT); pinMode(self.DB[3], INPUT)
-        pinMode(self.DB[4], INPUT); pinMode(self.DB[5], INPUT)
-        pinMode(self.DB[6], INPUT); pinMode(self.DB[7], INPUT)
+        wp.digitalWrite(self.RW, 1)
+        wp.pinMode(self.DB[0], wp.INPUT); wp.pinMode(self.DB[1], wp.INPUT)
+        wp.pinMode(self.DB[2], wp.INPUT); wp.pinMode(self.DB[3], wp.INPUT)
+        wp.pinMode(self.DB[4], wp.INPUT); wp.pinMode(self.DB[5], wp.INPUT)
+        wp.pinMode(self.DB[6], wp.INPUT); wp.pinMode(self.DB[7], wp.INPUT)
     cdef inline void reading4(self) noexcept nogil:
         """Set the interface into reading mode (RW=1 and all DBs as inputs) (4-bit interface)"""
-        digitalWrite(self.RW, 1)
-        pinMode(self.DB[0], INPUT); pinMode(self.DB[1], INPUT)
-        pinMode(self.DB[2], INPUT); pinMode(self.DB[3], INPUT)
+        wp.digitalWrite(self.RW, 1)
+        wp.pinMode(self.DB[0], wp.INPUT); wp.pinMode(self.DB[1], wp.INPUT)
+        wp.pinMode(self.DB[2], wp.INPUT); wp.pinMode(self.DB[3], wp.INPUT)
         
     cdef inline bint busy8(self) noexcept nogil:
         """Checks if the LCD is busy or not (8-bit interface)"""
         # RS, RW = 0, 1
-        digitalWrite(self.EN, 1)
-        delayMicroseconds(1)
-        cdef bint busy = digitalRead(self.DB[7])
-        digitalWrite(self.EN, 0)
+        wp.digitalWrite(self.EN, 1)
+        wp.delayMicroseconds(1)
+        cdef bint busy = wp.digitalRead(self.DB[7])
+        wp.digitalWrite(self.EN, 0)
         return busy
     cdef inline bint busy4(self) noexcept nogil:
         """Checks if the LCD is busy or not (4-bit interface)"""
         # RS, RW = 0, 1
-        digitalWrite(self.EN, 1)
-        delayMicroseconds(1)
-        cdef bint busy = digitalRead(self.DB[3])
-        digitalWrite(self.EN, 0)
-        digitalWrite(self.EN, 1)
-        digitalWrite(self.EN, 0)
+        wp.digitalWrite(self.EN, 1)
+        wp.delayMicroseconds(1)
+        cdef bint busy = wp.digitalRead(self.DB[3])
+        wp.digitalWrite(self.EN, 0)
+        wp.digitalWrite(self.EN, 1)
+        wp.digitalWrite(self.EN, 0)
         return busy
     @property
     def busy(self): return self.busy8() if self.bits == 8 else self.busy4()
@@ -206,42 +212,42 @@ cdef class LCD:
         cdef int EN = self.EN, DB = self.DB[7]
         cdef bint busy = True
         while busy:
-            delayMicroseconds(1); digitalWrite(EN, 1)
-            delayMicroseconds(1); busy = digitalRead(DB); digitalWrite(EN, 0)
+            wp.delayMicroseconds(1); wp.digitalWrite(EN, 1)
+            wp.delayMicroseconds(1); busy = wp.digitalRead(DB); wp.digitalWrite(EN, 0)
     cdef inline void wait4(self) noexcept nogil:
         """Waits for the LCD to not be busy (4-bit interface)"""
         # RS, RW = 0, 1
         cdef int EN = self.EN, DB = self.DB[3]
         cdef bint busy = True
         while busy:
-            delayMicroseconds(1); digitalWrite(EN, 1)
-            delayMicroseconds(1); busy = digitalRead(DB); digitalWrite(EN, 0)
-            delayMicroseconds(1); digitalWrite(EN, 1)
-            delayMicroseconds(1); digitalWrite(EN, 0)
+            wp.delayMicroseconds(1); wp.digitalWrite(EN, 1)
+            wp.delayMicroseconds(1); busy = wp.digitalRead(DB); wp.digitalWrite(EN, 0)
+            wp.delayMicroseconds(1); wp.digitalWrite(EN, 1)
+            wp.delayMicroseconds(1); wp.digitalWrite(EN, 0)
 
     cdef inline int __read8(self) noexcept nogil:
         """Read a single byte from the LCD, which must not be busy and RS set properly (8-bit interface)"""
         # RW = 1
-        delayMicroseconds(1); digitalWrite(self.EN, 1); delayMicroseconds(1)
+        wp.delayMicroseconds(1); wp.digitalWrite(self.EN, 1); wp.delayMicroseconds(1)
         cdef int out = (
-            digitalRead(self.DB[7]) << 7 | digitalRead(self.DB[6]) << 6 |
-            digitalRead(self.DB[5]) << 5 | digitalRead(self.DB[4]) << 4 |
-            digitalRead(self.DB[3]) << 3 | digitalRead(self.DB[2]) << 2 |
-            digitalRead(self.DB[1]) << 1 | digitalRead(self.DB[0]) << 0)
-        digitalWrite(self.EN, 0)
+            wp.digitalRead(self.DB[7]) << 7 | wp.digitalRead(self.DB[6]) << 6 |
+            wp.digitalRead(self.DB[5]) << 5 | wp.digitalRead(self.DB[4]) << 4 |
+            wp.digitalRead(self.DB[3]) << 3 | wp.digitalRead(self.DB[2]) << 2 |
+            wp.digitalRead(self.DB[1]) << 1 | wp.digitalRead(self.DB[0]) << 0)
+        wp.digitalWrite(self.EN, 0)
         return out
     cdef inline int __read4(self) noexcept nogil:
         """Read a single byte from the LCD, which must not be busy and RS set properly (4-bit interface)"""
         # RW = 1
-        delayMicroseconds(1); digitalWrite(self.EN, 1); delayMicroseconds(1)
+        wp.delayMicroseconds(1); wp.digitalWrite(self.EN, 1); wp.delayMicroseconds(1)
         cdef int out = (
-            digitalRead(self.DB[3]) << 7 | digitalRead(self.DB[2]) << 6 |
-            digitalRead(self.DB[1]) << 5 | digitalRead(self.DB[0]) << 4)
-        digitalWrite(self.EN, 0)
-        delayMicroseconds(1); digitalWrite(self.EN, 1); delayMicroseconds(1)
-        out |= (digitalRead(self.DB[3]) << 3 | digitalRead(self.DB[2]) << 2 |
-                digitalRead(self.DB[1]) << 1 | digitalRead(self.DB[0]) << 0)
-        digitalWrite(self.EN, 0)
+            wp.digitalRead(self.DB[3]) << 7 | wp.digitalRead(self.DB[2]) << 6 |
+            wp.digitalRead(self.DB[1]) << 5 | wp.digitalRead(self.DB[0]) << 4)
+        wp.digitalWrite(self.EN, 0)
+        wp.delayMicroseconds(1); wp.digitalWrite(self.EN, 1); wp.delayMicroseconds(1)
+        out |= (digitalRead(self.DB[3]) << 3 | wp.digitalRead(self.DB[2]) << 2 |
+                wp.digitalRead(self.DB[1]) << 1 | wp.digitalRead(self.DB[0]) << 0)
+        wp.digitalWrite(self.EN, 0)
         return out
     cdef int read8(self) noexcept nogil:
         """Read a single byte from the LCD, the character address (8-bit interface)"""
@@ -257,17 +263,17 @@ cdef class LCD:
         """Read a single byte from the LCD, the data (8-bit interface)"""
         # RW = 1
         self.wait8()
-        digitalWrite(self.RS, 1)
+        wp.digitalWrite(self.RS, 1)
         cdef int x = self.__read8()
-        digitalWrite(self.RS, 0)
+        wp.digitalWrite(self.RS, 0)
         return x
     cdef int readData4(self) noexcept nogil:
         """Read a single byte from the LCD, the data (4-bit interface)"""
         # RW = 1
         self.wait4()
-        digitalWrite(self.RS, 1)
+        wp.digitalWrite(self.RS, 1)
         cdef int x = self.__read4()
-        digitalWrite(self.RS, 0)
+        wp.digitalWrite(self.RS, 0)
         return x
 
     cdef inline void __write8(self, unsigned char x) noexcept nogil:
@@ -301,16 +307,16 @@ cdef class LCD:
         """Writes a single byte to the LCD either as data (8-bit interface)"""
         #assert(0 <= x <= 0xFF)
         self.wait8()
-        digitalWrite(self.RS, 1)
+        wp.digitalWrite(self.RS, 1)
         self.__write8(x)
-        digitalWrite(self.RS, 0)
+        wp.digitalWrite(self.RS, 0)
     cdef void writeData4(self, unsigned char x) noexcept nogil:
         """Writes a single byte to the LCD either as data (4-bit interface)"""
         #assert(0 <= x <= 0xFF)
         self.wait4()
-        digitalWrite(self.RS, 1)
+        wp.digitalWrite(self.RS, 1)
         self.__write4(x)
-        digitalWrite(self.RS, 0)
+        wp.digitalWrite(self.RS, 0)
 
     ########## COMMANDS ##########
     def clear(self):

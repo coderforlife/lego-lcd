@@ -3,8 +3,7 @@
 Helpers for useing the LCD library. In general these are all specific to my setup and devices.
 """
 
-import RPi.GPIO, wiringpi
-# requires: <lcd>
+import RPi.GPIO, lcd
 
 __all__ = ["lcd_setup", "set_contrast", "set_backlight", "beep", "as_bytes"]
 
@@ -127,27 +126,25 @@ LCD_TRANS.update(ASCII_TRANS)
 
 def lcd_setup(ct=None, bl=None):
     """Setup the LCD and other GPIO items. Returns the LCD object."""
-    from .lcd import LCD
-    wiringpi.wiringPiSetupGpio()
-    RPi.GPIO.setmode(RPi.GPIO.BCM)
-    wiringpi.pinMode(CT_PIN, wiringpi.PWM_OUTPUT)
+    lcd.wiringPiSetupGpio()
+    RPi.GPIO.setmode(RPi.GPIO.BCM)  # TODO: remove
+    lcd.pinMode(CT_PIN, lcd.PWM_OUTPUT)
     if ct is not None: set_contrast(ct)
-    wiringpi.pinMode(BL_PIN, wiringpi.PWM_OUTPUT)
+    lcd.pinMode(BL_PIN, lcd.PWM_OUTPUT)
     if bl is not None: set_backlight(bl)
-    return LCD(RS_PIN, RW_PIN, EN_PIN, DB_PINS, LCD_DIM)
+    return lcd.LCD(RS_PIN, RW_PIN, EN_PIN, DB_PINS, LCD_DIM)
 
 def set_contrast(ct):
     """Sets the LCD contrast amount, ct is a value from 0.0 to 1.0"""
-    wiringpi.pwmWrite(CT_PIN, int(max(min(ct, 1.0), 0.0)*512))
+    lcd.pwmWrite(CT_PIN, int(max(min(ct, 1.0), 0.0)*512))
 
 def set_backlight(bl):
     """Sets the LCD backlight amount, bl is a value from 0.0 to 1.0"""
-    wiringpi.pwmWrite(BL_PIN, int(max(min(bl, 1.0), 0.0)*1024))
+    lcd.pwmWrite(BL_PIN, int(max(min(bl, 1.0), 0.0)*1024))
 
 def beep(freq=1000, dur=0.1):
     """Emit a beep"""
-    from .lcd import beep
-    beep(BEEP_PIN, freq, dur)
+    lcd.beep(BEEP_PIN, freq, dur)
 
 def as_bytes(s, trans=None):
     """
