@@ -10,19 +10,22 @@ weekdays = (b'Mon', b'Tue', b'Wed', b'Thu', b'Fri', b'Sat', b'Sun')
 months = (b'Jan', b'Feb', b'Mar', b'Apr', b'May', b'Jun',
           b'Jul', b'Aug', b'Sep', b'Oct', b'Nov', b'Dec')
 
-def write_day(dt, bignum_digits):
+def write_day(lcd, dt, bignum_digits):
     lcd.write_at((0,1), b'%3s %02d'%(weekdays[dt.weekday()], dt.day))
     lcd.write_at((1,0), b'%3s %4d'%(months[dt.month-1], dt.year))
-def write_hour(h, bignum_digits):
+
+def write_hour(lcd, h, bignum_digits):
     q, r = divmod(h if show24h else (12 if h == 0 else (h-12*(h>12))), 10)
     lcd.write_at((0,10), (b' ' if q == 0 else bignum_digits[0][q]) + bignum_digits[0][r])
     lcd.write_at((1,10), (b' ' if q == 0 else bignum_digits[1][q]) + bignum_digits[1][r])
     lcd.write_at((1,18), (b'  ' if show24h else (b'am' if h < 12 else b'pm')))
-def write_min(m, bignum_digits):
+
+def write_min(lcd, m, bignum_digits):
     q, r = divmod(m, 10)
     lcd.write_at((0,13), bignum_digits[0][q] + bignum_digits[0][r])
     lcd.write_at((1,13), bignum_digits[1][q] + bignum_digits[1][r])
-def write_sec(s, bignum_digits):
+
+def write_sec(lcd, s, bignum_digits):
     q, r = divmod(s, 10)
     lcd.write_at((0,16), bignum_digits[0][q] + bignum_digits[0][r])
     lcd.write_at((1,16), bignum_digits[1][q] + bignum_digits[1][r])
@@ -39,15 +42,15 @@ def run_clock(lcd = None):
     lcd.write_at((0,15), b'\xCD'); lcd.write_at((1,15), b'\xCD')
 
     old = datetime.now()
-    write_day(old, bignums)
-    write_hour(old.hour, bignums)
-    write_min(old.minute, bignums)
+    write_day(lcd, old, bignums)
+    write_hour(lcd, old.hour, bignums)
+    write_min(lcd, old.minute, bignums)
     while True:
         x = datetime.now()
-        if old.day != x.day or old.month != x.month or old.year != x.year: write_day(x, bignums)
-        if old.hour != x.hour: write_hour(x.hour, bignums)
-        if old.minute != x.minute: write_min(x.minute, bignums)
-        write_sec(x.second, bignums)
+        if old.day != x.day or old.month != x.month or old.year != x.year: write_day(lcd, x, bignums)
+        if old.hour != x.hour: write_hour(lcd, x.hour, bignums)
+        if old.minute != x.minute: write_min(lcd, x.minute, bignums)
+        write_sec(lcd, x.second, bignums)
         old = x
         slp = 0.999-time()%1 # not 1.0 - x since it seems it takes ~1 ms to just get to the top of the loop
         if slp > 0: sleep(slp)
