@@ -36,7 +36,7 @@ def beep(int pin, double freq=1000, double dur=0.1):
         wp.pinMode(pin, wp.OUTPUT)    
         delay = <unsigned int>(1000000 // (2 * freq)) # Hz -> microseconds (halfed)
         niter = <unsigned int>(2*dur*freq + 0.5)
-        for i in xrange(niter):
+        for i in range(niter):
             wp.digitalWrite(pin, i & 1)
             wp.delayMicroseconds(delay)
         wp.digitalWrite(pin, 0)
@@ -451,7 +451,7 @@ cdef class LCD:
     ##### WRITING / READING #####
     cdef inline void write_raw(self, unsigned char* s, Py_ssize_t n) nogil:
         cdef Py_ssize_t i
-        for i in xrange(n): self._write_data(self, s[i])
+        for i in range(n): self._write_data(self, s[i])
     def write(self, bytes s):
         """
         Writes the string s to the LCD screen at the current cursor position. s must be a bytes or
@@ -465,7 +465,7 @@ cdef class LCD:
         self.write_raw(<unsigned char*><char*>s, len(s))
     cdef inline void read_raw(self, unsigned char* s, Py_ssize_t n) nogil:
         cdef Py_ssize_t i
-        for i in xrange(n): s[i] = self._read_data(self)
+        for i in range(n): s[i] = self._read_data(self)
     def read(self, int n=1):
         """
         Reads n values from the LCD screen at the current cursor position. The cursor will be
@@ -485,7 +485,7 @@ cdef class LCD:
     ##### ADVANCED WRITING / READING #####
     def read_all(self):
         """Reads all lines from the LCD into a list using read_from."""
-        return [self.read_from((i, 0), self.nc) for i in xrange(self.nr)]
+        return [self.read_from((i, 0), self.nc) for i in range(self.nr)]
 
     def write_all(self, *lines):
         """Writes many lines to the LCD using write_at after clearing the screen."""
@@ -574,4 +574,4 @@ cdef class LCD:
         cdef int n = stop - start, i
         if n <= 0: return []
         data = self.__execute_char(start, lambda:self.read(8*n))
-        return [data[i:i+8] for i in xrange(0, 8*n, 8)]
+        return [data[i:i+8] for i in range(0, 8*n, 8)]
