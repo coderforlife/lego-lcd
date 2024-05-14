@@ -13,20 +13,21 @@ def write_day(lcd, dt, bignum_digits):
     lcd.write_at((1,0), b'%3s %4d'%(months[dt.month-1], dt.year))
 
 def write_hour(lcd, h, bignum_digits):
-    q, r = divmod(h if show24h else (12 if h == 0 else (h-12*(h>12))), 10)
-    lcd.write_at((0,10), (b' ' if q == 0 else bignum_digits[0][q:q+1]) + bignum_digits[0][r:r+1])
-    lcd.write_at((1,10), (b' ' if q == 0 else bignum_digits[1][q:q+1]) + bignum_digits[1][r:r+1])
+    write_2_digit(lcd, 10, h if show24h else (12 if h == 0 else (h-12*(h>12))), bignum_digits, False)
     lcd.write_at((1,18), (b'  ' if show24h else (b'am' if h < 12 else b'pm')))
 
 def write_min(lcd, m, bignum_digits):
-    q, r = divmod(m, 10)
-    lcd.write_at((0,13), bignum_digits[0][q:q+1] + bignum_digits[0][r:r+1])
-    lcd.write_at((1,13), bignum_digits[1][q:q+1] + bignum_digits[1][r:r+1])
+    write_2_digit(lcd, 13, m, bignum_digits)
 
 def write_sec(lcd, s, bignum_digits):
-    q, r = divmod(s, 10)
-    lcd.write_at((0,16), bignum_digits[0][q:q+1] + bignum_digits[0][r:r+1])
-    lcd.write_at((1,16), bignum_digits[1][q:q+1] + bignum_digits[1][r:r+1])
+    write_2_digit(lcd, 16, s, bignum_digits)
+
+def write_2_digit(lcd, column, value, bignum_digits, leading_zero = True):
+    q, r = divmod(value, 10)
+    leading_space = q == 0 and not leading_zero
+    for i in range(len(bignum_digits)):
+        s = (b' ' if leading_space else bignum_digits[i][q:q+1]) + bignum_digits[i][r:r+1]
+        lcd.write_at((i, column), s)
 
 def run_clock(lcd = None):
     if lcd is None:
