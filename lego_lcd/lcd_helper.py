@@ -3,7 +3,8 @@
 Helpers for useing the LCD library. In general these are all specific to my setup and devices.
 """
 
-import RPi.GPIO, lcd
+import RPi.GPIO
+from . import lcd
 
 __all__ = ["lcd_setup", "set_contrast", "set_backlight", "beep", "as_bytes"]
 

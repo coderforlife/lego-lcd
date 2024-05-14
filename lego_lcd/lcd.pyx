@@ -1,7 +1,7 @@
 #cython: language_level=3
 
 from cpython.bytes cimport PyBytes_FromStringAndSize
-cimport wiringpi as wp
+from . cimport wiringpi as wp
 
 
 # Wiring-PI Wrapper Functions
@@ -17,7 +17,7 @@ def wiringPiSetupSys(): return wp.wiringPiSetupSys()
 def pinMode(int pin, int mode): wp.pinMode(pin, mode)
 def digitalWrite(int pin, int value): wp.digitalWrite(pin, value)
 def pwmWrite(int pin, int value): wp.pwmWrite(pin, value)
-def digitalRead(int pin): return wp.digitalWrite(pin)
+def digitalRead(int pin): return wp.digitalRead(pin)
 def millis(): return wp.millis()
 def micros(): return wp.micros()
 def delay(unsigned int howLong): wp.delay(howLong)
@@ -33,7 +33,7 @@ def beep(int pin, double freq=1000, double dur=0.1):
     """
     cdef unsigned int delay, niter, i
     with nogil:
-        wp.pinMode(pin, OUTPUT)    
+        wp.pinMode(pin, wp.OUTPUT)    
         delay = <unsigned int>(1000000 // (2 * freq)) # Hz -> microseconds (halfed)
         niter = <unsigned int>(2*dur*freq + 0.5)
         for i in xrange(niter):
@@ -245,7 +245,7 @@ cdef class LCD:
             wp.digitalRead(self.DB[1]) << 5 | wp.digitalRead(self.DB[0]) << 4)
         wp.digitalWrite(self.EN, 0)
         wp.delayMicroseconds(1); wp.digitalWrite(self.EN, 1); wp.delayMicroseconds(1)
-        out |= (digitalRead(self.DB[3]) << 3 | wp.digitalRead(self.DB[2]) << 2 |
+        out |= (wp.digitalRead(self.DB[3]) << 3 | wp.digitalRead(self.DB[2]) << 2 |
                 wp.digitalRead(self.DB[1]) << 1 | wp.digitalRead(self.DB[0]) << 0)
         wp.digitalWrite(self.EN, 0)
         return out
@@ -459,7 +459,7 @@ cdef class LCD:
         increment is False). The screen will possibly be shifted if shift is True.
         """
         self.write_raw(<unsigned char*><char*>s, len(s))
-    def write_at(self, int pos, bytes s):
+    def write_at(self, pos, bytes s):
         """Equivilent to `lcd.position = pos; lcd.write(s)`"""
         self.position = pos
         self.write_raw(<unsigned char*><char*>s, len(s))
@@ -475,7 +475,7 @@ cdef class LCD:
         cdef bytes s = PyBytes_FromStringAndSize(NULL, n)
         self.read_raw(<unsigned char*><char*>s, n)
         return s
-    def read_from(self, int pos, int n=1):
+    def read_from(self, pos, int n=1):
         """Equivilent to `lcd.position = pos; lcd.read(n)`"""
         self.position = pos
         cdef bytes s = PyBytes_FromStringAndSize(NULL, n)

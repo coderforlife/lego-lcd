@@ -16,19 +16,19 @@ def write_day(lcd, dt, bignum_digits):
 
 def write_hour(lcd, h, bignum_digits):
     q, r = divmod(h if show24h else (12 if h == 0 else (h-12*(h>12))), 10)
-    lcd.write_at((0,10), (b' ' if q == 0 else bignum_digits[0][q]) + bignum_digits[0][r])
-    lcd.write_at((1,10), (b' ' if q == 0 else bignum_digits[1][q]) + bignum_digits[1][r])
+    lcd.write_at((0,10), (b' ' if q == 0 else bignum_digits[0][q:q+1]) + bignum_digits[0][r:r+1])
+    lcd.write_at((1,10), (b' ' if q == 0 else bignum_digits[1][q:q+1]) + bignum_digits[1][r:r+1])
     lcd.write_at((1,18), (b'  ' if show24h else (b'am' if h < 12 else b'pm')))
 
 def write_min(lcd, m, bignum_digits):
     q, r = divmod(m, 10)
-    lcd.write_at((0,13), bignum_digits[0][q] + bignum_digits[0][r])
-    lcd.write_at((1,13), bignum_digits[1][q] + bignum_digits[1][r])
+    lcd.write_at((0,13), bignum_digits[0][q:q+1] + bignum_digits[0][r:r+1])
+    lcd.write_at((1,13), bignum_digits[1][q:q+1] + bignum_digits[1][r:r+1])
 
 def write_sec(lcd, s, bignum_digits):
     q, r = divmod(s, 10)
-    lcd.write_at((0,16), bignum_digits[0][q] + bignum_digits[0][r])
-    lcd.write_at((1,16), bignum_digits[1][q] + bignum_digits[1][r])
+    lcd.write_at((0,16), bignum_digits[0][q:q+1] + bignum_digits[0][r:r+1])
+    lcd.write_at((1,16), bignum_digits[1][q:q+1] + bignum_digits[1][r:r+1])
 
 def run_clock(lcd = None):
     if lcd is None:
