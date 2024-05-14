@@ -19,7 +19,7 @@ LCD_DIM = (20, 2)
 ASCII_TRANS = {
     # Pass-through of custom characters
     '\x00':'\x00', '\x01':b'\x01', '\x02':b'\x02', '\x03':b'\x03', '\x04':b'\x04', '\x05':b'\x05', '\x06':b'\x06', '\x07':b'\x07',
-    # Pass-through of special characters to be handled specialy
+    # Pass-through of special characters to be handled specially
     '\t':b'\t','\n':b'\n','\r':b'\r',
     # Whitespace that maps to space or nothing
     ' ':b' ',' ':b' ','​':b'',
