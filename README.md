@@ -19,6 +19,6 @@ pip install -e .
 
 # Install, enabled, and run the service
 sudo cp lcd-clock.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable --now lcd-clock.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now lcd-clock.service
 ```
