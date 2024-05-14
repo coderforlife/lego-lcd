@@ -1,0 +1,8 @@
+[Unit]
+Description=Runs the LCD Clock
+
+[Service]
+ExecStart=/home/lego/lego-lcd/venv/bin/lcd-clock
+
+[Install]
+WantedBy=multi-user.target
