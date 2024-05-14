@@ -1,0 +1,5 @@
+https://wireless.wiki.kernel.org/en/users/Documentation/iw/replace-iwconfig
+https://donnutcompute.wordpress.com/2014/04/20/connect-to-wi-fi-via-command-line/
+https://wiki.archlinux.org/index.php/WPA_supplicant
+https://wiki.netbsd.org/tutorials/how_to_use_wpa_supplicant/
+https://www.daemon-systems.org/man/wpa_supplicant.conf.5.html
