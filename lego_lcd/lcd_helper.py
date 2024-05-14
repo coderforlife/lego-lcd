@@ -3,7 +3,6 @@
 Helpers for useing the LCD library. In general these are all specific to my setup and devices.
 """
 
-import RPi.GPIO
 from . import lcd
 
 __all__ = ["lcd_setup", "set_contrast", "set_backlight", "beep", "as_bytes"]
@@ -16,7 +15,7 @@ RS_PIN = 2    # 8
 RW_PIN = 3    # 9
 EN_PIN = 4    # 7
 DB_PINS = (17, 18, 15, 14) # (0, 1, 16, 15)
-LCD_DIM = (20, 2) # several parts in the code still assume 20x2
+LCD_DIM = (20, 2)
 ASCII_TRANS = {
     # Pass-through of custom characters
     '\x00':'\x00', '\x01':b'\x01', '\x02':b'\x02', '\x03':b'\x03', '\x04':b'\x04', '\x05':b'\x05', '\x06':b'\x06', '\x07':b'\x07',
@@ -128,7 +127,6 @@ LCD_TRANS.update(ASCII_TRANS)
 def lcd_setup(ct=None, bl=None):
     """Setup the LCD and other GPIO items. Returns the LCD object."""
     lcd.wiringPiSetupGpio()
-    RPi.GPIO.setmode(RPi.GPIO.BCM)  # TODO: remove
     lcd.pinMode(CT_PIN, lcd.PWM_OUTPUT)
     if ct is not None: set_contrast(ct)
     lcd.pinMode(BL_PIN, lcd.PWM_OUTPUT)

@@ -3,8 +3,6 @@
 from time import time, sleep
 from datetime import datetime
 
-# requires: <wifi_selection>, <lcd_helper>
-
 show24h = False
 weekdays = (b'Mon', b'Tue', b'Wed', b'Thu', b'Fri', b'Sat', b'Sun')
 months = (b'Jan', b'Feb', b'Mar', b'Apr', b'May', b'Jun',
@@ -84,12 +82,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# Button on pin 24
-#def onpress(pin):
-#    if RPi.GPIO.input(pin): print("up")
-#    else: print("down")
-#RPi.GPIO.setup(24, RPi.GPIO.IN, RPi.GPIO.PUD_UP)
-#RPi.GPIO.add_event_detect(24, RPi.GPIO.BOTH, onpress, 1)
-# #RPi.GPIO.remove_event_detect(24)
