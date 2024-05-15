@@ -10,6 +10,7 @@ The module has the following functions exposed:
 * `has_internet` - checks if there is a current active internet connection
 * `local_ip` - gets the local IP of the machine
 * `external_ip` - gets the external IP of the machine
-* `get_list_of_access_points` - gets a list of all access points
+* `get_all_access_points` - gets a list of all access points
 * `delete_all_wifi_connections` - remove all existing wifi connections
+* `connect_to_ap` - connect to an access point
 * 
