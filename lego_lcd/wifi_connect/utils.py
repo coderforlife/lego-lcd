@@ -8,7 +8,7 @@ def local_ip() -> str|None:
         socket.setdefaulttimeout(1)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("8.8.8.8", 53))
-            return s.getsockname()[0].decode('ascii')
+            return s.getsockname()[0]
     except Exception: return None
 
 
@@ -16,7 +16,7 @@ def external_ip() -> str|None:
     """Returns the external IP of the machine or None it not on the Internet"""
     try:
         with urlopen('https://checkip.amazonaws.com') as page:
-            return page.read().decode('ascii')
+            return page.read().decode('ascii').strip()
     except Exception: return None
 
 
