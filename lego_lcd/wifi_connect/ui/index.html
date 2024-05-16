@@ -1,101 +1,61 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>WiFi Connect</title>
+    <title>Wi-Fi Connect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/index.js"></script>
     <link rel="shortcut icon" href="/img/favicon.ico">
-
-    <style>
-      body {
-        padding-top: 80px;
-      }
-
-      #logo {
-        margin-top: -4px;
-      }
-
-      button {
-        margin-top: 7px;
-      }
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/script.js"></script>
   </head>
-
   <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <a class="navbar-brand"><img id="logo" height=40 src="/img/logo.png"></img></a>
-        </div>
-      </div>
-    </nav>
-
+    <div id="nav"><img id="logo" src="/img/logo.png"> Lego Clock</div>
     <div class="container">
-
-      <div class="row before-submit">
-        <div class="col-lg-8 col-lg-offset-1">
-          <h3>Hi! Please choose your WiFi Network from the list.</h3>
-        </div>
+      <div id="wifi-info">
+        <form id='connect-form' action='/connect' method='post'>
+          <h1>Your Wi-Fi Information</h1>
+          <table>
+            <tr>
+              <td><label for="ssid-select">Network:</label></td>
+              <td class="custom-select"><select id='ssid-select' name='ssid'></select></td>
+              <td><span id='refresh-networks' aria-label="Refresh Networks"></span></td>
+            </tr>
+            <tr id="hidden-ssid-group">
+              <td><label for="hidden-ssid">Name:</label></td>
+              <td><input class="form-control" name="hidden-ssid"></td>
+            </tr>
+            <tr id="hidden-security-group">
+              <td><label for="hidden-security">Security:</label></td>
+              <td>
+                <select id="hidden-security" name="hidden-security">
+                  <option value="OPEN">None</option>
+                  <option value="WEP">WEP</option>
+                  <option value="WPA">WPA</option>
+                  <option value="WPA2">WPA2</option>
+                  <!--<option value="ENTERPRISE">Enterprise</option>-->
+                </select>
+              </td>
+            </tr>
+            <tr id="identity-group">
+              <td><label for="identity">Username:</label></td>
+              <td><input name="identity"></td>
+            </tr>
+            <tr id="passphrase-group">
+              <td><label for="passphrase">Password:</label></td>
+              <td>
+                <input type="password" name="passphrase" id="passphrase">
+                <span id="toggle-passphrase" aria-label="Toggle Password Visibility"></span>
+              </td>
+            </tr>
+          </table>
+          <button type='submit' id="connect-button">Connect</button>
+        </form>
       </div>
 
-      <div class="row before-submit">
-        <div class="col-lg-8 col-lg-offset-1">
-          <form class="form form-horizontal" id='connect-form' action='/connect' method='post'>
-
-            <div class="form-group">
-              <label for="ssid-select" class="control-label col-lg-4">WiFi Networks</label>
-              <div class="col-lg-4">
-                <select id='ssid-select' class="form-control" name='ssid'></select>
-              </div>
-            </div>
-
-            <div class="form-group hidden" id="hidden-ssid-group">
-              <label for="hidden-ssid" class="control-label col-lg-4">Hidden WiFi Network Name</label>
-              <div class="col-lg-4">
-                <input class="form-control" name="hidden-ssid"></input>
-              </div>
-            </div>
-
-            <div class="form-group hidden" id="identity-group">
-              <label for="identity" class="control-label col-lg-4">WiFi Username</label>
-              <div class="col-lg-4">
-                <input class="form-control" name="identity"></input>
-              </div>
-            </div>
-
-            <div class="form-group hidden" id="passphrase-group">
-              <label for="passphrase" class="control-label col-lg-4">WiFi Password</label>
-              <div class="col-lg-4">
-                <input type='password' class="form-control" name='passphrase'></input>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <div class="col-lg-6 col-lg-offset-1 text-center">
-                <button type='submit' class='btn btn-success'>Connect</button>
-              </div>
-            </div>
-          </form>
-        </div>
+      <div id='submitted' style="display: none;">
+        <h1>Applying Changes...</h1>
+        <p>Your device will soon be online.</p>
+        <p>If the connection is unsuccessful, the Access Point will be back up in a few minutes.</p>
       </div>
-
-      <div class="row hidden" id='submit-message'>
-        <div class="col-lg-8 col-lg-offset-1">
-          <h3>Applying changes...</h3>
-          <p>Your device will soon be online. If connection is unsuccessful, the Access Point will be back up in a few minutes.</p>
-        </div>
-      </div>
-
-      <div class="row hidden" id='no-networks-message'>
-        <div class="col-lg-8 col-lg-offset-1">
-          <h3>No wifi networks available</h3>
-          <p>Please ensure there is a network within range and reboot the device.</p>
-        </div>
-      </div>
-
     </div>
   </body>
 </html>

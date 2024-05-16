@@ -1,0 +1,113 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Top Header */
+#nav {
+  background-color: #333;
+  border-bottom: 5px solid #111;
+  font-size: 2.2em;
+  font-weight: bold;
+  color: #f0f0f0;
+  -webkit-text-stroke: 2px #111;
+  text-align: center;
+}
+#nav img {
+  margin: 0.2em;
+  margin-left: 0;
+  height: 1.6em;
+  vertical-align: middle;
+}
+
+/* Basic Styles */
+.container {
+  margin: 0 auto;
+  max-width: 600px;
+  width: 100%;
+  color: #333;
+  text-align: center;
+}
+h1 { font-size: 1.6em; }
+table { margin: 0 auto; }
+td { text-align: left; padding: 0.2em; }
+label {
+  font-weight: bold;
+  display: block;
+  width: 100%;
+  text-align: right;
+}
+
+/* Basic Input Styles */
+:root { --input-width: 200px; }
+input { width: var(--input-width); }
+select { width: 100%; }
+select:disabled { font-style: italic; }
+option[data-security="HIDDEN"] { font-style: italic; }
+
+/* Hidding and Showing Groups */
+#hidden-ssid-group, #hidden-security-group,
+#identity-group, #passphrase-group { visibility: collapse; }
+.ENTERPRISE #identity-group, .ENTERPRISE #passphrase-group,
+.WEP #passphrase-group, .WPA #passphrase-group, .WPA2 #passphrase-group,
+.HIDDEN #hidden-ssid-group, .HIDDEN #hidden-security-group { visibility: visible; }
+
+/* SSID Select */
+/*#ssid-select option:not([data-security="HIDDEN"]) { background-image: url(/img/lock.svg); }*/
+/*#ssid-select option[data-security="OPEN"] { background-image: url(/img/lock_open.svg); }*/
+/*#ssid-select option[data-strength="4"] { background-image: url(/img/wifi_4.svg); }*/
+/*#ssid-select option[data-strength="3"] { background-image: url(/img/wifi_3.svg); }*/
+/*#ssid-select option[data-strength="2"] { background-image: url(/img/wifi_2.svg); }*/
+/*#ssid-select option[data-strength="1"] { background-image: url(/img/wifi_1.svg); }*/
+/*#ssid-select option[data-strength="0"] { background-image: url(/img/wifi_0.svg); }*/
+#refresh-networks {
+  cursor: pointer;
+  display: inline-block;
+  width: 1.5em; height: 1.5em;
+  background: url(/img/refresh.svg) no-repeat;
+  background-size: contain;
+  vertical-align: middle;
+}
+
+/* Passphrase */
+input#passphrase {
+  padding-right: 1.5em;
+  margin-right: -1.5em;
+  width: calc(var(--input-width) - 1.5em + 0.2em);
+}
+#toggle-passphrase {
+  cursor: pointer;
+  display: inline-block;
+  width: 1em; height: 1em;
+  background-position: center;
+  vertical-align: middle;
+  position: relative;
+  left: -0.3em;
+  z-index: 2;
+}
+input[type="password"] + #toggle-passphrase {
+  background: url(/img/visibility.svg) no-repeat;
+  background-size: contain;
+}
+input[type="text"] + #toggle-passphrase {
+  background: url(/img/visibility_off.svg) no-repeat;
+  background-size: contain;
+}
+
+/* Connect Button */
+#connect-button {
+  margin-top: 0.5em;
+  padding: 0.25em 1em;
+  font-size: 1.1em;
+  background-color: #007e43;
+  color: #f0f0f0;
+  border: 3px solid #005a2e;
+  border-radius: 0.5em;
+  cursor: pointer;
+}
+#connect-button:disabled {
+  background-color: #999;
+  color: #666;
+  border-color: #666;
+}
