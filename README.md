@@ -59,10 +59,30 @@ sudo systemctl enable --now lcd-clock.service
 3D Model
 --------
 
-Coming Soon
+The 3D model is available in the Lego-Box.stl and Lego-Lid.stl files. It is precisely 8x larger than
+a regular Lego (but without the indents underneath and exaggerated logos raised from the nubs). To
+complete the assembly you need 10 heat set inserts such as
+[these from McMaster Carr](https://www.mcmaster.com/94180A312/).
 
 
 Circuit and Components
 ----------------------
 
-Coming Soon
+The case is based around a Raspberry Pi 3B, but any Raspberry Pi from the first one till 3 should
+fit all of the holes. Raspberry Pi 4 changed the plugs and thus won't fit without a redesign.
+
+It is designed around a
+[CrystalFontz 20x2 CFAH2002Y-RDI-ET LCD](https://www.crystalfontz.com/product/cfah2002yrdiet-character-display-20x2).
+However, that product is discontinued. They should have other 20x2 screens that fit, but they seem
+to no longer carry red colored serial displays.
+
+Additionally, breadboard is needed for running the adjustable backlight and contrast. I use the
+[SparkFun Solder-able Breadboard - Mini](https://www.sparkfun.com/products/12702).
+
+Finally, several small components are needed including capacitors, resistors, transistors, header
+pins, and wires with terminals. I don't have an exact list anymore, but I will try to recreate it.
+
+Photos
+------
+![Final Product](pic1.jpg)
+![Internals](pic2.jpg)
