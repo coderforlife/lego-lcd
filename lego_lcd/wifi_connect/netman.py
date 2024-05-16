@@ -3,33 +3,26 @@
 
 from contextlib import contextmanager
 from enum import Enum
+from dataclasses import dataclass
 from uuid import uuid4
 from time import sleep
 from ipaddress import ip_address
 
 import sdbus
 from sdbus_block.networkmanager import (
-    NetworkManager, NetworkManagerSettings,
-    NetworkConnectionSettings, NetworkDeviceGeneric, NetworkDeviceWireless, AccessPoint
+    NetworkManager, NetworkManagerSettings, NetworkConnectionSettings,
+    NetworkDeviceGeneric, NetworkDeviceWireless, AccessPoint as NMAccessPoint
 )
 from sdbus_block.networkmanager.settings import ConnectionProfile
-from sdbus_block.networkmanager.enums import DeviceType, DeviceState
-try:
-    from sdbus_block.networkmanager.enums import (
-        WifiAccessPointCapabilitiesFlags, WifiAccessPointSecurityFlags
-    )
-except ImportError:
-    # For older versions of sdbus_block.networkmanager
-    from sdbus_block.networkmanager.enums import (
-        AccessPointCapabilities as WifiAccessPointCapabilitiesFlags,
-        WpaSecurityFlags as WifiAccessPointSecurityFlags
-    )
+from sdbus_block.networkmanager.enums import (
+    DeviceType, DeviceState, AccessPointCapabilities, WpaSecurityFlags
+)
 
 from .defaults import HOTSPOT_CONNECTION_NAME, GENERIC_CONNECTION_NAME
 from .defaults import DEFAULT_GATEWAY, DEFAULT_PREFIX, DEFAULT_INTERFACE
 
 
-# Set the default bus to the system bus - recommended for NetworkManager
+# Set the default bus to the system bus - required for NetworkManager
 sdbus.set_default_bus(sdbus.sd_bus_open_system())
 
 
@@ -43,20 +36,19 @@ class SecurityType(Enum):
     HIDDEN = 16
 
 
-def __all_connections() -> list[NetworkConnectionSettings]:
-    """Return a list of all known connections."""
-    return [NetworkConnectionSettings(path) for path in NetworkManagerSettings().connections]
+@dataclass
+class AccessPoint:
+    """An access point with ssid, strength, and security type."""
+    ssid: str
+    strength: int  # 0-100
+    security: SecurityType
 
 
 def __filter_connections(key: str, value) -> list[NetworkConnectionSettings]:
     """Return a list of connections that have the given key and value."""
-    return [conn for conn in __all_connections()
+    all_conns = [NetworkConnectionSettings(path) for path in NetworkManagerSettings().connections]
+    return [conn for conn in all_conns
             if conn.get_settings()["connection"][key][1] == value]
-
-
-def __find_connection(name: str) -> NetworkConnectionSettings|None:
-    connections = __filter_connections("id", name)
-    return connections[0] if connections else None
 
 
 def __all_wifi_devices() -> list[NetworkDeviceWireless]:
@@ -73,9 +65,7 @@ def __first_wifi_device_path() -> str|None:
 
 
 def delete_all_wifi_connections() -> None:
-    """
-    Remove ALL wifi connections - to start clean or before running the hotspot.
-    """
+    """Remove ALL wifi connections."""
     # Delete the '802-11-wireless' connections
     for connection in __filter_connections("type", "802-11-wireless"):
         connection.delete()
@@ -83,38 +73,46 @@ def delete_all_wifi_connections() -> None:
 
 
 def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> bool:
-    """Generic connection stopper / deleter."""
-    conn = __find_connection(name)
-    if conn is None:
-        return False
-    conn.delete()
+    """Stop (delete) a connection."""
+    conns = __filter_connections("id", name)
+    if not conns: return False
+    conns[0].delete()
     sleep(2)
     return True
 
 
-def get_all_access_points() -> dict[str, SecurityType]:
-    """Return a dictionary of available SSIDs and their security type."""
-    # Ignores duplicate SSIDs, only keeps the last one found
+def get_all_access_points(scan: bool = False) -> list[AccessPoint]:
+    """
+    Return a list of available and unique access points. The list is sorted by strength.
+    The list never includes empty SSIDs. If `scan` is True, this will force a scan of APs.
+    """
+    devices = __all_wifi_devices()
+    if scan:
+        # Force a scan of all wifi devices
+        for dev in devices: dev.request_scan({})
+        sleep(1)  # wait for the scan to complete
     aps = {}
-    for dev in __all_wifi_devices():
-        for ap in (AccessPoint(ap) for ap in dev.access_points):
-            # TODO: save max(ap.strength)?
-            aps[ap.ssid] = __get_security_type(ap)
-    return aps
+    for dev in devices:
+        for ap in (NMAccessPoint(ap) for ap in dev.access_points):
+            ssid, strength = ap.ssid.decode('ascii'), ap.strength
+            if not ssid: continue  # skip empty SSIDs
+            if ssid not in aps or aps[ssid].strength < strength:  # keep the strongest signal
+                aps[ap.ssid] = AccessPoint(ssid, strength, __get_security_type(ap))
+    return sorted(aps.values(), key=lambda ap: ap.strength, reverse=True)
 
 
-def __get_security_type(ap: AccessPoint) -> SecurityType:
+def __get_security_type(ap: NMAccessPoint) -> SecurityType:
     """
     Return the security type of the given SSID, or None if not found.
     """
     # The wpa and rsn (i.e. WPA2) flags can be used to determine the general security type
-    if (ap.wpa_flags | ap.rsn_flags) & WifiAccessPointSecurityFlags.KEY_MGMT_802_1X:
+    if (ap.wpa_flags | ap.rsn_flags) & WpaSecurityFlags.AUTH_802_1X:  # WifiAccessPointSecurityFlags.KEY_MGMT_802_1X
         return SecurityType.ENTERPRISE
-    if ap.rsn_flags != WifiAccessPointSecurityFlags.NONE:
+    if ap.rsn_flags != WpaSecurityFlags.NONE:  # WifiAccessPointSecurityFlags.NONE
         return SecurityType.WPA2
-    if ap.wpa_flags != WifiAccessPointSecurityFlags.NONE:
+    if ap.wpa_flags != WpaSecurityFlags.NONE:  # WifiAccessPointSecurityFlags.NONE
         return SecurityType.WPA
-    if ap.flags & WifiAccessPointCapabilitiesFlags.PRIVACY:
+    if ap.flags & AccessPointCapabilities.PRIVACY:  # WifiAccessPointCapabilitiesFlags.PRIVACY
         return SecurityType.WEP
     return SecurityType.NONE
 
@@ -125,6 +123,7 @@ def connect_wifi(conn_info: dict) -> None:
     dev_path = __first_wifi_device_path()
     profile = ConnectionProfile.from_settings_dict(conn_info)
     NetworkManager().add_and_activate_connection(profile.to_dbus(), dev_path, "/")
+    
     # Wait for the connection to activate
     loop_count = 0
     dev = NetworkDeviceWireless(dev_path)
