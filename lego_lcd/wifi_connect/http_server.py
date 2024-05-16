@@ -4,191 +4,125 @@ import os, getopt, sys, json
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs
 
-# Local modules
-from . import netman
+from .defaults import DEFAULT_GATEWAY
 from .utils import have_internet
-from .netman import SecurityType
+from .netman import get_all_access_points, hotspot, start_hotspot, stop_hotspot, connect_to_ap, delete_all_wifi_connections
 from .dnsmasq import dnsmasq
 
 # Defaults
-ADDRESS = '192.168.42.1'
+ADDRESS = DEFAULT_GATEWAY
 PORT = 80
 UI_PATH = '../ui'
 
 
-#------------------------------------------------------------------------------
-# A custom http request handler class factory.
-# Handle the GET and POST requests from the UI form and JS.
-# The class factory allows us to pass custom arguments to the handler.
-def RequestHandlerClassFactory(address, aps):
+class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
+    """
+    Custom request handler for our HTTP server.
+    Handles the GET and POST requests from the UI form and JS.
+    """
+    def do_GET(self):
+        """Handle specific requests, otherwise let the server handle it."""
 
-    class MyHTTPReqHandler(SimpleHTTPRequestHandler):
+        print(f'do_GET {self.path}')
 
-        def __init__(self, *args, **kwargs):
-            self.address = address
-            self.aps = aps
-            super().__init__(*args, **kwargs)
+        # Not sure if this is just OSX hitting the captured portal,
+        # but we need to exit if we get it.
+        if self.path == '/bag': self.server.shutdown()  # TODO: deadlocks unless in a different thread?
 
-        # See if this is a specific request, otherwise let the server handle it.
-        def do_GET(self):
+        # Handle the hotspot starting and a computer connecting to it,
+        # we have to return a redirect to the gateway to get the 
+        # captured portal to show up.
+        elif self.path in ('/hotspot-detect.html', '/generate_204'):
+            self.send_response(301) # redirect
+            address, port = self.server.server_address
+            url = f'http://{address}/' if port == 80 else f'http://{address}:{port}/'
+            self.send_header('Location', url)
+            self.end_headers()
 
-            print(f'do_GET {self.path}')
+        # Handle a REST API request to return the list of APs
+        elif self.path == '/networks':
+            aps = get_all_access_points(scan=True)
+            data = json.dumps([
+                (ap.ssid, ap.strength, ap.security.name) for ap in aps
+                if ap.ssid and ap.strength > 0  # strength == 0 is the hotspot itself
+            ]).encode('utf-8')
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
-            # Handle the hotspot starting and a computer connecting to it,
-            # we have to return a redirect to the gateway to get the 
-            # captured portal to show up.
-            if self.path == '/hotspot-detect.html':
-                self.send_response(301) # redirect
-                new_path = f'http://{self.address}/'
-                print(f'redirecting to {new_path}')
-                self.send_header('Location', new_path)
-                self.end_headers()
-                return
-
-            elif self.path == '/generate_204':
-                self.send_response(301) # redirect
-                new_path = f'http://{self.address}/'
-                print(f'redirecting to {new_path}')
-                self.send_header('Location', new_path)
-                self.end_headers()
-                return
-
-            # Handle a REST API request to return the list of APs
-            elif self.path == '/networks':
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(json.dumps(
-                    {ssid:str(security) for ssid, security in self.aps.items()}
-                ).encode('utf-8'))
-                return
-
-            # Not sure if this is just OSX hitting the captured portal,
-            # but we need to exit if we get it.
-            if self.path == '/bag': sys.exit()
-
+        else:
             # All other requests are handled by the server which sends files
             # from the ui_path we were initialized with.
             super().do_GET()
 
-
+    def do_POST(self):
+        """Handle the form post from the UI."""
         # test with: curl localhost:5000 -d "{'name':'value'}"
-        def do_POST(self):
-            fields = parse_qs(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
+        data = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
 
-            # Parse the form post
-            if 'ssid' not in fields:
-                self.send_response(400)
-                self.end_headers()
-                return
+        # Parse the form post
+        if 'ssid' not in data:
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b'{"status":"Invalid Input"}\n')
+            return
+        ssid = data['ssid']
+        hidden = data.get('hidden', False)
+        username = data.get('identity', None)
+        password = data.get('passphrase', None)
+        # TODO: Could check 'security' for appropriate security type and validate username/password
 
-            ssid = fields['ssid'][0]
-            hidden = False
-            if 'hidden-ssid' in fields:
-                ssid = fields['hidden-ssid'][0]
-                hidden = True
-            username = fields['identity'][0] if 'identity' in fields else None
-            password = fields['passphrase'][0] if 'passphrase' in fields else None
+        # Stop the hotspot
+        stop_hotspot()
 
-            # Look up the ssid in the list we sent, to find out its security
-            # type for the new connection we have to make
-            if not hidden and ssid in self.aps:
-                ap = self.aps.ssid[ssid]
-                if ap.security_type == SecurityType.NONE:
-                    username = password = None
-                elif ap.security_type == SecurityType.ENTERPRISE:
-                    if username is None or password is None:
-                        self.send_response(400)
-                        self.end_headers()
-                        return
-                elif password is None:
-                    self.send_response(400)
-                    self.end_headers()
-                    return
-                else:
-                    username = None
-
-            # Stop the hotspot
-            netman.stop_hotspot()
-
+        try:
             # Connect to the user's selected AP
-            netman.connect_to_ap(ssid=ssid, username=username, password=password)
+            connect_to_ap(ssid, username, password, hidden)
 
             # Report success
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b'OK\n')
-            sys.exit()
-
-            # print(f'Connection failed, restarting the hotspot.')
-
-            # # Update the list of APs since we are not connected
-            # self.ap = netman.get_list_of_access_points()
-
-            # # Start the hotspot again
-            # netman.start_hotspot()
-
-    return  MyHTTPReqHandler # the class our factory just created.
+            self.wfile.write(b'{"status":"Success"}\n')
+            self.server.shutdown()  # TODO: deadlocks unless in a different thread?
+        except Exception as e:
+            print(f'Failed to connect to {ssid}: {e}')
+            # Start the hotspot again
+            start_hotspot()
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(b'{"status":"Unable to connect wi-fi"}\n')
 
 
-#------------------------------------------------------------------------------
-# Create the hotspot, start dnsmasq, start the HTTP server.
 def main(address, port, ui_path):
     # Check if we are already connected, if so we are done.
     if have_internet():
-        sys.exit()
+        return
 
-    # Get list of available AP from net man.  
-    # Must do this AFTER deleting any existing connections (above),
-    # and BEFORE starting our hotspot (or the hotspot will be the only thing
-    # in the list).
-    aps = netman.get_list_of_access_points()
+    # Find the ui directory which is up one from where this file is located.
+    web_dir = os.path.join(os.path.dirname(__file__), ui_path)
 
     # Start the hotspot and dnsmasq (to advertise us as a router so captured portal pops up)
-    with netman.hotspot(), dnsmasq():
-        # Find the ui directory which is up one from where this file is located.
-        web_dir = os.path.join(os.path.dirname(__file__), ui_path)
-
-        # Host:Port our HTTP server listens on
-        server_address = (address, port)
-
-        # Custom request handler class (so we can pass in our own args)
-        MyRequestHandlerClass = RequestHandlerClassFactory(address, aps)
-
+    with hotspot(), dnsmasq():
         # Start an HTTP server to serve the content in the ui dir and handle the 
         # POST request in the handler class.
-        print(f'Waiting for a connection to our hotspot {netman.get_hotspot_SSID()} ...')
-        httpd = HTTPServer(server_address, MyRequestHandlerClass, directory=web_dir)
-        try:
+        print(f'Waiting for a connection to our hotspot ...')
+        with HTTPServer((address, port), CaptiveHTTPReqHandler, directory=web_dir) as httpd:
             httpd.serve_forever()
-        except KeyboardInterrupt:
-            httpd.server_close()
 
 
-def string_to_int(s, default):
-    """Util to convert a string to an int, or provide a default."""
-    try:
-        return int(s)
-    except ValueError:
-        return default
-
-
-#------------------------------------------------------------------------------
-# Entry point and command line argument processing.
 if __name__ == "__main__":
-
-
     address = ADDRESS
     port = PORT
     ui_path = UI_PATH
-    delete_connections = False
 
-    usage = ''\
-f'Command line args: \n'\
-f'  -a <HTTP server address>     Default: {address} \n'\
-f'  -p <HTTP server port>        Default: {port} \n'\
-f'  -u <UI directory to serve>   Default: "{ui_path}" \n'\
-f'  -d Delete Connections First  Default: {delete_connections} \n'\
-f'  -h Show help.\n'
+    usage = f"""Command line args:
+  -a <HTTP server address>     Default: {address}
+  -p <HTTP server port>        Default: {port}
+  -u <UI directory to serve>   Default: "{ui_path}"
+  -d Delete Connections First
+  -h Show help."""
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "a:p:u:r:dh")
@@ -202,24 +136,15 @@ f'  -h Show help.\n'
             sys.exit()
 
         elif opt in ("-d"):
-           delete_connections = True
+           delete_all_wifi_connections()
 
         elif opt in ("-a"):
             address = arg
 
         elif opt in ("-p"):
-            port = string_to_int(arg, port)
+            port = int(arg)
 
         elif opt in ("-u"):
             ui_path = arg
-
-    print(f'Address={address}')
-    print(f'Port={port}')
-    print(f'UI path={ui_path}')
-    print(f'Delete Connections={delete_connections}')
-
-    # See if caller wants to delete all existing connections first
-    if delete_connections:
-        netman.delete_all_wifi_connections()
 
     main(address, port, ui_path)
