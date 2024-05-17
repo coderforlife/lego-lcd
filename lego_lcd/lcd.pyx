@@ -489,9 +489,8 @@ cdef class LCD:
 
     def write_all(self, *lines):
         """Writes many lines to the LCD using write_at after clearing the screen."""
-        from itertools import izip
         self.clear()
-        for i, line in izip(range(self.nr), lines): # don't use enumerate as we want to stop when either of them is finished
+        for i, line in zip(range(self.nr), lines): # don't use enumerate as we want to stop when either of them is finished
             self.write_at((i, 0), line)
 
     def write_lines(self, lines, justify='left', bytes ellipsis=b'_'):
