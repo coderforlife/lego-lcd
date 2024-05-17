@@ -177,11 +177,6 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
     connect_wifi(conn_dict)
 
 
-def __get_ip_address_int(ip: str) -> int:
-    # the bytes are reversed for NetworkManager...
-    return int(ip_address('.'.join(ip.split('.')[::-1])))
-
-
 def __generic_connection_profile(name: str, ssid: str, hidden: bool = False) -> dict:
     """Return a generic connection profile for the given name and ssid. Has no security."""
     wifi = {'mode': 'infrastructure', 'ssid': ssid}
@@ -201,7 +196,6 @@ def start_hotspot(ssid: str = DEFAULT_HOTSPOT_SSID,
     conn['802-11-wireless'] |= {'band': 'bg', 'mode': 'ap'}
     conn['connection'] |= {'autoconnect': False, 'interface-name': interface}
     conn['ipv4'] = {'address-data': [{'address': address, 'prefix': prefix}], 'gateway': '0.0.0.0',
-                    #'addresses': [[__get_ip_address_int(address), prefix, 0]], # 0 == '0.0.0.0'
                     'method': 'manual'}
     connect_wifi(conn)
 
