@@ -10,7 +10,7 @@ from .netman import (get_all_access_points, hotspot, start_hotspot, stop_hotspot
 from .dnsmasq import dnsmasq
 
 
-def __print_callback(msg: str, detail: str = None):
+def _print_callback(msg: str, detail: str = None):
     """
     Callback from the captive portal. The message and detail is one of:
     - 'ready' and the SSID of the hotspot
@@ -30,7 +30,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
     Custom request handler for our HTTP server.
     Handles the GET and POST requests from the UI form and JS.
     """
-    def __init__(self, *args, callback=__print_callback, **kwargs):
+    def __init__(self, *args, callback=_print_callback, **kwargs):
         self.callback = callback
         super().__init__(*args, **kwargs)
 
@@ -113,7 +113,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
 
 
 def run_server(address: str = DEFAULT_GATEWAY, port: int = DEFAULT_PORT,
-               ui_path: str = DEFAULT_UI_PATH, callback = __print_callback) -> None:
+               ui_path: str = DEFAULT_UI_PATH, callback = _print_callback) -> None:
     """Run the HTTP server with the given address, port and UI path."""
     directory = os.path.normpath(ui_path)
     class WebServer(ThreadingHTTPServer):
@@ -127,7 +127,7 @@ def run_server(address: str = DEFAULT_GATEWAY, port: int = DEFAULT_PORT,
 
 def run_captive_portal(hotspot_ssid: str = DEFAULT_HOTSPOT_SSID,
                        address: str = DEFAULT_GATEWAY, port: int = DEFAULT_PORT,
-                       ui_path: str = DEFAULT_UI_PATH, callback = __print_callback) -> None:
+                       ui_path: str = DEFAULT_UI_PATH, callback = _print_callback) -> None:
     """Run the captive portal including the hotspot, dnsmasq service, and HTTP server."""
     # Start the hotspot and dnsmasq
     with dnsmasq(gateway=address), hotspot(hotspot_ssid, address):
