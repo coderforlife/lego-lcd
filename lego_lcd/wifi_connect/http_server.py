@@ -48,11 +48,9 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         """Handle specific requests, otherwise let the server handle it."""
 
-        print(f'do_GET {self.path}')
-
         # Not sure if this is just OSX hitting the captured portal,
         # but we need to exit if we get it.
-        if self.path == '/bag': self.server.shutdown()  # TODO: deadlocks unless in a different thread?
+        if self.path == '/bag': self.server.shutdown()
 
         # Handle the hotspot starting and a computer connecting to it,
         # we have to return a redirect to the gateway to get the 
@@ -103,7 +101,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
 
             # Report success
             self.send_json(b'{"status":"Success"}')
-            self.server.shutdown()  # TODO: deadlocks unless in a different thread?
+            self.server.shutdown()
         except Exception as e:
             print(f'Failed to connect to {ssid}: {e}')
             self.callback('failed', None)
