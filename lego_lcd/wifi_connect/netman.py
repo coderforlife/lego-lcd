@@ -18,7 +18,7 @@ from sdbus_block.networkmanager.enums import (
     DeviceType, DeviceState, AccessPointCapabilities, WpaSecurityFlags
 )
 
-from .defaults import HOTSPOT_CONNECTION_NAME, GENERIC_CONNECTION_NAME
+from .defaults import DEFAULT_HOTSPOT_SSID, HOTSPOT_CONNECTION_NAME, GENERIC_CONNECTION_NAME
 from .defaults import DEFAULT_GATEWAY, DEFAULT_PREFIX, DEFAULT_INTERFACE
 
 
@@ -175,7 +175,7 @@ def __generic_connection_profile(name: str, ssid: str, hidden: bool = False) -> 
     }
 
 
-def start_hotspot(ssid: str,
+def start_hotspot(ssid: str = DEFAULT_HOTSPOT_SSID,
                   address: str = DEFAULT_GATEWAY, prefix: int = DEFAULT_PREFIX,
                   interface: str = DEFAULT_INTERFACE, name: str = HOTSPOT_CONNECTION_NAME) -> None:
     """Start a local hotspot on the wifi interface."""
@@ -194,7 +194,8 @@ def stop_hotspot(name: str = HOTSPOT_CONNECTION_NAME) -> bool:
 
 
 @contextmanager
-def hotspot(ssid: str, address: str = DEFAULT_GATEWAY, prefix: int = DEFAULT_PREFIX,
+def hotspot(ssid: str = DEFAULT_HOTSPOT_SSID,
+            address: str = DEFAULT_GATEWAY, prefix: int = DEFAULT_PREFIX,
             interface: str = DEFAULT_INTERFACE, name: str = HOTSPOT_CONNECTION_NAME):
     """Context manager that runs a hotspot with the given ssid."""
     start_hotspot(ssid, address, prefix, interface, name)
