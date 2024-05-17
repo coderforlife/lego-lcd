@@ -183,7 +183,7 @@ def __generic_connection_profile(name: str, ssid: str, hidden: bool = False) -> 
     wifi = {'mode': 'infrastructure', 'ssid': ssid}
     if hidden: wifi['hidden'] = True
     return {
-        '802-11-wireless': hidden,
+        '802-11-wireless': wifi,
         'connection': {'id': name, 'type': '802-11-wireless', 'uuid': str(uuid4())},
         'ipv4': {'method': 'auto'}, 'ipv6': {'method': 'auto'},
     }
