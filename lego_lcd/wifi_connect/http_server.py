@@ -30,8 +30,9 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
     Custom request handler for our HTTP server.
     Handles the GET and POST requests from the UI form and JS.
     """
-    def __init__(self, *args, callback=_print_callback, **kwargs):
+    def __init__(self, *args, callback=_print_callback, address=DEFAULT_GATEWAY, **kwargs):
         self.callback = callback
+        self.address = address
         super().__init__(*args, **kwargs)
 
 
@@ -58,7 +59,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
         # captured portal to show up.
         elif self.path in ('/hotspot-detect.html', '/generate_204'):
             self.send_response(301) # redirect
-            address, port = self.server.server_address
+            address, port = self.address, self.server.server_address[1]
             url = f'http://{address}/' if port == 80 else f'http://{address}:{port}/'
             self.send_header('Location', url)
             self.end_headers()
@@ -113,28 +114,30 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
 
 
 def run_server(address: str = DEFAULT_GATEWAY, port: int = DEFAULT_PORT,
-               ui_path: str = DEFAULT_UI_PATH, callback = _print_callback) -> None:
-    """Run the HTTP server with the given address, port and UI path."""
+               ui_path: str = DEFAULT_UI_PATH, bind_address: str = '', 
+               callback = _print_callback) -> None:
+    """Run the HTTP server."""
     directory = os.path.normpath(ui_path)
     class WebServer(ThreadingHTTPServer):
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
-                                     directory=directory, callback=callback)
+                                     directory=directory, callback=callback, address=address)
 
-    with WebServer((address, port), CaptiveHTTPReqHandler) as httpd:
+    with WebServer((bind_address, port), CaptiveHTTPReqHandler) as httpd:
         httpd.serve_forever()
 
 
 def run_captive_portal(hotspot_ssid: str = DEFAULT_HOTSPOT_SSID,
                        address: str = DEFAULT_GATEWAY, port: int = DEFAULT_PORT,
-                       ui_path: str = DEFAULT_UI_PATH, callback = _print_callback) -> None:
+                       ui_path: str = DEFAULT_UI_PATH, bind_address: str = '',
+                       callback = _print_callback) -> None:
     """Run the captive portal including the hotspot, dnsmasq service, and HTTP server."""
     # Start the hotspot and dnsmasq
     with dnsmasq(gateway=address), hotspot(hotspot_ssid, address):
         callback('ready', hotspot_ssid)
 
         # Start an HTTP server
-        run_server(address, port, ui_path, callback)
+        run_server(address, port, ui_path, bind_address, callback)
 
 
 if __name__ == "__main__":
