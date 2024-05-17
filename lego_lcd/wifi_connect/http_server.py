@@ -78,7 +78,6 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         """Handle the form post from the UI."""
-        # test with: curl localhost:5000 -d "{'name':'value'}"
         data = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
 
         # Parse the form post
@@ -92,7 +91,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
         # TODO: Could check 'security' for appropriate security type and validate username/password
 
         # Stop the hotspot
-        stop_hotspot()
+        hotspot_ssid = stop_hotspot()  # returns None if no hotspot was running
 
         try:
             # Connect to the user's selected AP
@@ -107,7 +106,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
             self.callback('failed', None)
 
             # Start the hotspot again
-            start_hotspot()
+            if hotspot_ssid: start_hotspot(hotspot_ssid, self.address)
             self.send_json(b'{"status":"Unable to connect wi-fi"}', 500)
 
 

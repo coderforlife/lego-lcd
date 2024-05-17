@@ -82,14 +82,18 @@ def delete_all_wifi_connections() -> None:
     sleep(2)
 
 
-def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> bool:
-    """Stop (delete) a connection."""
+def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> str|None:
+    """Stop (delete) a connection. Retruns the SSID of the connection if found, otherwise None."""
     __ensure_system_bus()
     conns = __filter_connections("id", name)
-    if not conns: return False
+    if not conns: return None
+    try:
+        ssid = conns[0].get_settings()["802-11-wireless"]["ssid"][1]
+    except KeyError:
+        ssid = ''
     conns[0].delete()
     sleep(2)
-    return True
+    return ssid
 
 
 def get_all_access_points(scan: bool = False) -> list[AccessPoint]:
@@ -202,8 +206,8 @@ def start_hotspot(ssid: str = DEFAULT_HOTSPOT_SSID,
     connect_wifi(conn)
 
 
-def stop_hotspot(name: str = HOTSPOT_CONNECTION_NAME) -> bool:
-    """Stop and delete the hotspot. Returns True for success or False (for not found)."""
+def stop_hotspot(name: str = HOTSPOT_CONNECTION_NAME) -> str|None:
+    """Stop and delete the hotspot. Returns the SSID of the connection if found, otherwise None."""
     return stop_connection(name)
 
 
