@@ -88,7 +88,7 @@ def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> str|None:
     conns = __filter_connections("id", name)
     if not conns: return None
     try:
-        ssid = conns[0].get_settings()["802-11-wireless"]["ssid"][1]
+        ssid = conns[0].get_settings()["802-11-wireless"]["ssid"][1].decode('ascii')
     except KeyError:
         ssid = ''
     conns[0].delete()
@@ -179,7 +179,7 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
 
 def __generic_connection_profile(name: str, ssid: str, hidden: bool = False) -> dict:
     """Return a generic connection profile for the given name and ssid. Has no security."""
-    wifi = {'mode': 'infrastructure', 'ssid': ssid}
+    wifi = {'mode': 'infrastructure', 'ssid': ssid.encode('ascii')}
     if hidden: wifi['hidden'] = True
     return {
         '802-11-wireless': wifi,
