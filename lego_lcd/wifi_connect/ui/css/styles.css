@@ -40,7 +40,7 @@ label {
 }
 
 /* Basic Input Styles */
-:root { --input-width: 200px; }
+:root { --input-width: 300px; }
 input { width: var(--input-width); }
 select { width: 100%; }
 select:disabled { font-style: italic; }

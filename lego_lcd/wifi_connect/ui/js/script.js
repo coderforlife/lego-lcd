@@ -1,8 +1,8 @@
 const strengths = [
-	"\u{2581}\u{2581}\u{2581}\u{2581}\u{2581}", // ▁▁▁▁▁
+	"\u{2581}\u{2581}\u{2581}\u{2581}", // ▁▁▁▁▁
 	"\u{2581}\u{2583}\u{2583}\u{2583}", // ▁▃▃▃
 	"\u{2581}\u{2583}\u{2585}\u{2585}", // ▁▃▅▅
-	"\u{2581}\u{2583}\u{2585}\u{2587}" // ▁▃▅▇
+	"\u{2581}\u{2583}\u{2585}\u{2587}", // ▁▃▅▇
 ];
 document.addEventListener('DOMContentLoaded', function () {
 	const ssidSelect = document.getElementById('ssid-select');
