@@ -131,7 +131,7 @@ def run_captive_portal(hotspot_ssid: str = DEFAULT_HOTSPOT_SSID,
                        callback = _print_callback) -> None:
     """Run the captive portal including the hotspot, dnsmasq service, and HTTP server."""
     # Start the hotspot and dnsmasq
-    with dnsmasq(gateway=address), hotspot(hotspot_ssid, address):
+    with hotspot(hotspot_ssid, address), dnsmasq(gateway=address):
         callback('ready', hotspot_ssid)
 
         # Start an HTTP server
