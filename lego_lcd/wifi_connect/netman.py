@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 from time import sleep
 from ipaddress import ip_address
+import threading
 
 import sdbus
 from sdbus_block.networkmanager import (
@@ -22,8 +23,16 @@ from .defaults import DEFAULT_HOTSPOT_SSID, HOTSPOT_CONNECTION_NAME, GENERIC_CON
 from .defaults import DEFAULT_GATEWAY, DEFAULT_PREFIX, DEFAULT_INTERFACE
 
 
-# Set the default bus to the system bus - required for NetworkManager
-sdbus.set_default_bus(sdbus.sd_bus_open_system())
+# We need to use a thread-local variable to store the system bus for NetworkManager
+__system_bus = threading.local()
+
+
+def __ensure_system_bus():
+    """Ensure the system bus is set for NetworkManager."""
+    if not hasattr(__system_bus, 'bus'):
+        __system_bus.bus = sdbus.sd_bus_open_system()
+        sdbus.set_default_bus(__system_bus.bus)
+    return __system_bus.bus
 
 
 class SecurityType(Enum):
@@ -67,6 +76,7 @@ def __first_wifi_device_path() -> str|None:
 def delete_all_wifi_connections() -> None:
     """Remove ALL wifi connections."""
     # Delete the '802-11-wireless' connections
+    __ensure_system_bus()
     for connection in __filter_connections("type", "802-11-wireless"):
         connection.delete()
     sleep(2)
@@ -74,6 +84,7 @@ def delete_all_wifi_connections() -> None:
 
 def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> bool:
     """Stop (delete) a connection."""
+    __ensure_system_bus()
     conns = __filter_connections("id", name)
     if not conns: return False
     conns[0].delete()
@@ -86,6 +97,7 @@ def get_all_access_points(scan: bool = False) -> list[AccessPoint]:
     Return a list of available and unique access points. The list is sorted by strength.
     The list never includes empty SSIDs. If `scan` is True, this will force a scan of APs.
     """
+    __ensure_system_bus()
     devices = __all_wifi_devices()
     if scan:
         # Force a scan of all wifi devices
@@ -119,6 +131,8 @@ def __get_security_type(ap: NMAccessPoint) -> SecurityType:
 
 def connect_wifi(conn_info: dict) -> None:
     """Create and activate a wifi connection using NetworkManager."""
+    __ensure_system_bus()
+
     # Add and activate the connection
     dev_path = __first_wifi_device_path()
     profile = ConnectionProfile.from_settings_dict(conn_info)
