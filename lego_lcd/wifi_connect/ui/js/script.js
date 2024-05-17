@@ -32,11 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		ssidSelect.add(opt);
 		opt.disabled = true;
 		showHideFormFields();
-		//fetch("/networks").then((response) => response.json())
-		Promise.resolve([["SSID1-WPA2", 100, "WPA2"], ["SSID2-OPEN", 50, "OPEN"], ["SSID3-WEP", 25, "WEP"], ["SSID4-ENT", 25, "ENTERPRISE"]])
+		fetch("/networks").then((response) => response.json())
 			.then((networks) => {
 				ssidSelect.options.length = 0;
-				for (var [ssid, strength, security] of networks) { addSsid(ssid, strength/100, security); };
+				for (const [ssid, strength, security] of networks) {
+					addSsid(ssid, strength/100, security);
+				}
 			}).catch((error) => {
 				console.error('Error:', error);
 				ssidSelect.options.length = 0;
@@ -50,24 +51,24 @@ document.addEventListener('DOMContentLoaded', function () {
 	connectForm.addEventListener('submit', function (ev) {
 		ev.preventDefault();
 		const selected = ssidSelect.options[ssidSelect.selectedIndex];
-		var ssid = selected.value;
-		var security = selected.getAttribute('data-security');
+		let ssid = selected.value;
+		let security = selected.getAttribute('data-security');
 		if (ssid === "" || security === "") { return; }
 		const data = {"ssid": ssid, "security": security}
 		const hidden = security === "HIDDEN";
 		if (hidden) {
 			data["ssid"] = ssid = document.getElementById('hidden-ssid').value;
-			if (ssid.length == 0) { return; }
+			if (ssid.length === 0) { return; }
 			data["security"] = security = hiddenSecurity.value;
 			data["hidden"] = true;
 		}
 		if (security !== "OPEN") {
 			data["passphrase"] = document.getElementById('passphrase').value;
-			if (data["passphrase"].length == 0) { return; }
+			if (data["passphrase"].length === 0) { return; }
 		}
 		if (security === "ENTERPRISE") {
 			data["identity"] = document.getElementById('identity').value;
-			if (data["identity"].length == 0) { return; }
+			if (data["identity"].length === 0) { return; }
 		}
 		document.getElementById("wifi-info").style.display = 'none';
 		document.getElementById("submitted").style.display = 'block';
@@ -89,5 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		const type = password.getAttribute('type');
 		password.setAttribute('type', type === 'password' ? 'text' : 'password');
 	}
-	document.getElementById('toggle-passphrase').addEventListener('click', togglePassphraseVisibility);
+	document.getElementById('toggle-passphrase').
+		addEventListener('click', togglePassphraseVisibility);
 });
