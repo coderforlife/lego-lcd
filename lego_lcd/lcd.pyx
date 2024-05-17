@@ -493,18 +493,12 @@ cdef class LCD:
         self.clear()
         for i, line in izip(range(self.nr), lines): # don't use enumerate as we want to stop when either of them is finished
             self.write_at((i, 0), line)
-        
-    def write_text(self, bytes text, justify='left', bytes ellipsis=b'_'):
+
+    def write_lines(self, lines, justify='left', bytes ellipsis=b'_'):
         """
-        Writes text to the LCD, breaking it into lines that will fit on the screen and justifying
-        each line as specified (default 'left' with 'center' and 'right' acceptable options). If
-        a single word is longer than the width of the LCD than it is truncated and the given
-        ellipsis character is appended (default is b'_' but the caller may want to define a
-        custom character that makes more sense). If there are more lines than the height of the
-        LCD the extras are dropped and the ellipsis character is added to the last line.
+        Writes lines to the LCD. See write_text() for more information. This function is a bit
+        different in that the text is already split into lines when calling this function.
         """
-        from textwrap import wrap
-        lines = wrap(text, self.nc, break_long_words=False)
         if len(lines) == 0: self.clear(); return
         if isinstance(lines[0], unicode): lines = [line.encode('ascii') for line in lines]
         justify = bytes.center if justify == 'center' else (bytes.rjust if justify == 'right' else bytes.ljust)
@@ -515,6 +509,18 @@ cdef class LCD:
                 line = line[:self.nc-1] + ellipsis
             lines[i] = justify(line, self.nc)
         self.write_all(*lines)
+
+    def write_text(self, text, justify='left', bytes ellipsis=b'_'):
+        """
+        Writes text to the LCD, breaking it into lines that will fit on the screen and justifying
+        each line as specified (default 'left' with 'center' and 'right' acceptable options). If
+        a single word is longer than the width of the LCD than it is truncated and the given
+        ellipsis character is appended (default is b'_' but the caller may want to define a
+        custom character that makes more sense). If there are more lines than the height of the
+        LCD the extras are dropped and the ellipsis character is added to the last line.
+        """
+        from textwrap import wrap
+        write_lines(wrap(text, self.nc, break_long_words=False))
     
     ##### CUSTOM CHARACTERS #####
     def __execute_char(self, int i, f):
