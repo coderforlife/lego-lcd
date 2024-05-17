@@ -520,7 +520,7 @@ cdef class LCD:
         LCD the extras are dropped and the ellipsis character is added to the last line.
         """
         from textwrap import wrap
-        write_lines(wrap(text, self.nc, break_long_words=False))
+        self.write_lines(wrap(text, self.nc, break_long_words=False))
     
     ##### CUSTOM CHARACTERS #####
     def __execute_char(self, int i, f):
