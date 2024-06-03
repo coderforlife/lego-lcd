@@ -96,6 +96,26 @@ def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> str|None:
     return ssid
 
 
+def get_access_point_path(ssid: str) -> str|None:
+    """Get the specific object path for an access point with the given SSID."""
+    __ensure_system_bus()
+    options = {'ssid': ssid.encode('ascii')}
+    devices = __all_wifi_devices()
+    for dev in devices: dev.request_scan(options)
+    sleep(1.5)  # wait for the scan to complete
+    found_path = "/"  # default to "no specific path"
+    found_strength = -1
+    for dev in devices:
+        for ap_path in dev.access_points:
+            ap = NMAccessPoint(ap_path)
+            strength = ap.strength
+            # If the SSID matches and the strength is greater than the last found, update the path
+            if ap.ssid.decode('ascii') != ssid and found_strength < strength:
+                found_path = ap_path
+                found_strength = strength
+    return found_path
+
+
 def get_all_access_points(scan: bool = False) -> list[AccessPoint]:
     """
     Return a list of available and unique access points. The list is sorted by strength.
@@ -133,14 +153,14 @@ def __get_security_type(ap: NMAccessPoint) -> SecurityType:
     return SecurityType.NONE
 
 
-def connect_wifi(conn_info: dict) -> None:
+def connect_wifi(conn_info: dict, ap_path: str = "/") -> None:
     """Create and activate a wifi connection using NetworkManager."""
     __ensure_system_bus()
 
     # Add and activate the connection
     dev_path = __first_wifi_device_path()
     profile = ConnectionProfile.from_settings_dict(conn_info)
-    NetworkManager().add_and_activate_connection(profile.to_dbus(), dev_path, "/")
+    NetworkManager().add_and_activate_connection(profile.to_dbus(), dev_path, ap_path)
     
     # Wait for the connection to activate
     loop_count = 0
@@ -157,32 +177,36 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
     """
     Connect to the given SSID with the given optional username and password.
     """
-    conn_dict = __generic_connection_profile(conn_name, ssid, hidden)
+    ap_path = get_access_point_path(ssid)
+    conn = __generic_connection_profile(conn_name, ssid, hidden) if ap_path == "/" else {}
+    if hidden: conn.setdefault('802-11-wireless', {})['hidden'] = True
+
     if password is None:
         # No auth, 'open' connection
         pass
 
     elif username is None:
         # Hidden, WEP, WPA, WPA2, password required
-        conn_dict['802-11-wireless']['security'] = '802-11-wireless-security'
-        conn_dict['802-11-wireless-security'] = {'key-mgmt': 'wpa-psk', 'psk': password}
+        conn.setdefault('802-11-wireless', {})['security'] = '802-11-wireless-security'
+        sec = conn.setdefault('802-11-wireless-security', {})
+        sec['key-mgmt'] = 'wpa-psk'
+        sec['psk'] = password
 
     else:
         # Enterprise, WPA-EAP, username and password required
-        conn_dict['802-11-wireless']['security'] = '802-11-wireless-security'
-        conn_dict['802-11-wireless-security'] = {'auth-alg': 'open', 'key-mgmt': 'wpa-eap'}
-        conn_dict['802-1x'] = {'eap': ['peap'], 'phase2-auth': 'mschapv2',
-                               'identity': username, 'password': password,}
+        conn.setdefault('802-11-wireless', {})['security'] = '802-11-wireless-security'
+        conn['802-1x'] = {'identity': username, 'password': password}
+        if ap_path == "/":
+            conn['802-11-wireless-security'] = {'auth-alg': 'open', 'key-mgmt': 'wpa-eap'}
+            conn['802-1x'] |= {'eap': ['peap'], 'phase2-auth': 'mschapv2'}
 
-    connect_wifi(conn_dict)
+    connect_wifi(conn, ap_path)
 
 
-def __generic_connection_profile(name: str, ssid: str, hidden: bool = False) -> dict:
+def __generic_connection_profile(name: str, ssid: str) -> dict:
     """Return a generic connection profile for the given name and ssid. Has no security."""
-    wifi = {'mode': 'infrastructure', 'ssid': ssid.encode('ascii')}
-    if hidden: wifi['hidden'] = True
     return {
-        '802-11-wireless': wifi,
+        '802-11-wireless': {'mode': 'infrastructure', 'ssid': ssid.encode('ascii')},
         'connection': {'id': name, 'type': '802-11-wireless', 'uuid': str(uuid4())},
         'ipv4': {'method': 'auto'}, 'ipv6': {'method': 'auto'},
     }
