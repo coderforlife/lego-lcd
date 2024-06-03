@@ -33,6 +33,13 @@ clock
 Code to run the clock using big numbers (utilizing custom characters).
 
 
+wifi_connect
+------------
+Implements a captive hotspot portal on the Raspberry Pi that allows it to connect to Wifi networks
+by using another device such as your phone. See its readme for more details. It has almost nothing
+LCD or Lego related (except in the graphics on the webpage).
+
+
 Installation on Raspberry Pi
 ----------------------------
 
