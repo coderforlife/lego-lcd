@@ -99,7 +99,7 @@ def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> str|None:
 def get_access_point_path(ssid: str) -> str|None:
     """Get the specific object path for an access point with the given SSID."""
     __ensure_system_bus()
-    options = {'ssid': ssid.encode('ascii')}
+    options = {'ssid': ('aay', [ssid.encode('ascii')])}
     devices = __all_wifi_devices()
     for dev in devices: dev.request_scan(options)
     sleep(1.5)  # wait for the scan to complete
@@ -110,7 +110,7 @@ def get_access_point_path(ssid: str) -> str|None:
             ap = NMAccessPoint(ap_path)
             strength = ap.strength
             # If the SSID matches and the strength is greater than the last found, update the path
-            if ap.ssid.decode('ascii') != ssid and found_strength < strength:
+            if ap.ssid.decode('ascii') == ssid and found_strength < strength:
                 found_path = ap_path
                 found_strength = strength
     return found_path
@@ -178,8 +178,8 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
     Connect to the given SSID with the given optional username and password.
     """
     ap_path = get_access_point_path(ssid)
-    conn = __generic_connection_profile(conn_name, ssid, hidden) if ap_path == "/" else {}
-    if hidden: conn.setdefault('802-11-wireless', {})['hidden'] = True
+    conn = __generic_connection_profile(conn_name, ssid)
+    if hidden: conn['802-11-wireless']['hidden'] = True
 
     if password is None:
         # No auth, 'open' connection
@@ -187,18 +187,22 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
 
     elif username is None:
         # Hidden, WEP, WPA, WPA2, password required
-        conn.setdefault('802-11-wireless', {})['security'] = '802-11-wireless-security'
+        conn['802-11-wireless']['security'] = '802-11-wireless-security'
         sec = conn.setdefault('802-11-wireless-security', {})
         sec['key-mgmt'] = 'wpa-psk'
         sec['psk'] = password
 
     else:
         # Enterprise, WPA-EAP, username and password required
-        conn.setdefault('802-11-wireless', {})['security'] = '802-11-wireless-security'
+        conn['802-11-wireless']['security'] = '802-11-wireless-security'
         conn['802-1x'] = {'identity': username, 'password': password}
         if ap_path == "/":
             conn['802-11-wireless-security'] = {'auth-alg': 'open', 'key-mgmt': 'wpa-eap'}
             conn['802-1x'] |= {'eap': ['peap'], 'phase2-auth': 'mschapv2'}
+
+    print(conn)
+    print(ap_path)
+    print(NMAccessPoint(ap_path).ssid)
 
     connect_wifi(conn, ap_path)
 
