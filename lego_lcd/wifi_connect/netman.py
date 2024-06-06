@@ -99,21 +99,25 @@ def stop_connection(name: str = GENERIC_CONNECTION_NAME) -> str|None:
 def get_access_point_path(ssid: str) -> str|None:
     """Get the specific object path for an access point with the given SSID."""
     __ensure_system_bus()
-    options = {'ssid': ('aay', [ssid.encode('ascii')])}
+    ssid = ssid.encode('ascii')
+    options = {'ssids': ('aay', [ssid])}
     devices = __all_wifi_devices()
     for dev in devices: dev.request_scan(options)
-    sleep(1.5)  # wait for the scan to complete
-    found_path = "/"  # default to "no specific path"
-    found_strength = -1
-    for dev in devices:
-        for ap_path in dev.access_points:
-            ap = NMAccessPoint(ap_path)
-            strength = ap.strength
-            # If the SSID matches and the strength is greater than the last found, update the path
-            if ap.ssid.decode('ascii') == ssid and found_strength < strength:
-                found_path = ap_path
-                found_strength = strength
-    return found_path
+    sleep(0.5)  # right after the scan wait a little longer
+    for tries in range(9):  # up to ~5 seconds of trying
+        sleep(0.5)
+        found_path = None
+        found_strength = -1
+        for dev in devices:
+            for ap_path in dev.get_all_access_points():
+                ap = NMAccessPoint(ap_path)
+                # If the SSID matches and the strength is greater than the last found, update the path
+                if ap.ssid == ssid and found_strength < ap.strength:
+                    found_path = ap_path
+                    found_strength = ap.strength
+        if found_path is not None:
+            return found_path  # found one - stop trying
+    return "/"  # never found one, return the "no specific path"
 
 
 def get_all_access_points(scan: bool = False) -> list[AccessPoint]:
