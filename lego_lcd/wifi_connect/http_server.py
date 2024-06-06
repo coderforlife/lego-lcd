@@ -96,7 +96,7 @@ class CaptiveHTTPReqHandler(SimpleHTTPRequestHandler):
         try:
             # Connect to the user's selected AP
             self.callback('connecting', ssid)
-            connect_to_ap(ssid, username, password, hidden)
+            connect_to_ap(ssid, password, username, hidden)
 
             # Report success
             self.send_json(b'{"status":"Success"}')
