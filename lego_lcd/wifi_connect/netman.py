@@ -165,7 +165,7 @@ def connect_wifi(conn_info: dict, ap_path: str = "/") -> None:
     dev_path = __first_wifi_device_path()
     profile = ConnectionProfile.from_settings_dict(conn_info)
     NetworkManager().add_and_activate_connection(profile.to_dbus(), dev_path, ap_path)
-    
+
     # Wait for the connection to activate
     loop_count = 0
     dev = NetworkDeviceWireless(dev_path)
@@ -190,7 +190,9 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
         pass
 
     elif username is None:
-        # Hidden, WEP, WPA, WPA2, password required
+        # WEP, WPA, WPA2, password required
+        # TODO: WEP uses 'none' and 'wep-key0' along with a 'wep-key-type' (1 for 10 or 26 character string, 2 for a passphrase)
+        # This whole thing should read the info from the AP path and fill ot all the right details
         conn['802-11-wireless']['security'] = '802-11-wireless-security'
         sec = conn.setdefault('802-11-wireless-security', {})
         sec['key-mgmt'] = 'wpa-psk'
@@ -203,10 +205,6 @@ def connect_to_ap(ssid: str, password: str|None = None, username: str|None = Non
         if ap_path == "/":
             conn['802-11-wireless-security'] = {'auth-alg': 'open', 'key-mgmt': 'wpa-eap'}
             conn['802-1x'] |= {'eap': ['peap'], 'phase2-auth': 'mschapv2'}
-
-    print(conn)
-    print(ap_path)
-    print(NMAccessPoint(ap_path).ssid)
 
     connect_wifi(conn, ap_path)
 
